@@ -298,7 +298,54 @@ public class CanvasGL implements ICanvasGL {
 
     @Override
     public void drawLine(float startX, float startY, float stopX, float stopY, GLPaint paint) {
+        if(paint.getLineWidth()>1){
+            drawFillLines(startX, startY, stopX, stopY, paint);
+        }
         glCanvas.drawLine(startX, startY, stopX, stopY, paint, defaultDrawShapeFilter);
+    }
+
+    private void drawFillLines(float startX, float startY, float stopX, float stopY, GLPaint paint) {
+
+        float startVectorX = 0 - startX;
+        float stopVectorX = 0 - stopX;
+        float startVectorY = 0 - startY;
+        float stopVectorY = 0 - stopY;
+        float vectorX = stopX - startX;
+        float vectorY = (stopY - startY);
+        float transposedVectorX = -vectorX;
+        float transposedVectorY = -vectorY;
+        double magnitude = Math.sqrt(transposedVectorX*transposedVectorX + transposedVectorY*transposedVectorY);
+        double unitX = transposedVectorX/magnitude;
+        double unitY = -transposedVectorY/magnitude;
+        float finalWidth = paint.getLineWidth();
+        paint.setLineWidth(1);
+        float missingWidth = finalWidth - 1;
+        while (missingWidth <= 2){
+            float scaleFactor = missingWidth / 2;
+            double scaledUnitX = unitX *scaleFactor;
+            double scaledUnitY = unitY *scaleFactor;
+            drawScaledLine(paint, startVectorX, stopVectorX, startVectorY, stopVectorY, scaledUnitX, scaledUnitY);
+            drawScaledLine(paint, startVectorX, stopVectorX, startVectorY, stopVectorY, -scaledUnitX, -scaledUnitY);
+            missingWidth -= 2;
+        }
+        if(missingWidth != 0) {
+            float scaleFactor = missingWidth /2;
+            double scaledUnitX = unitX *scaleFactor;
+            double scaledUnitY = unitY *scaleFactor;
+            paint.setLineWidth(scaleFactor / 2);
+            drawScaledLine(paint, startVectorX, stopVectorX, startVectorY, stopVectorY, scaledUnitX, scaledUnitY);
+            drawScaledLine(paint, startVectorX, stopVectorX, startVectorY, stopVectorY, -scaledUnitX, -scaledUnitY);
+        }
+        paint.setLineWidth(1);
+    }
+
+    private void drawScaledLine(GLPaint paint, float startVectorX, float stopVectorX, float startVectorY, float stopVectorY, double scaledUnitX, double scaledUnitY) {
+        drawLine((float) (startVectorX + scaledUnitX),
+                (float) (startVectorY + scaledUnitY),
+                (float) (stopVectorX + scaledUnitX),
+                (float) (stopVectorY + scaledUnitY),
+                paint
+        );
     }
 
 
